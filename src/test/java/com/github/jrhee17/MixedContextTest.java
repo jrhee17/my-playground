@@ -121,19 +121,19 @@ class MixedContextTest {
                 HttpRequest.of(HttpMethod.GET, "/2")).build();
         try (SafeCloseable ignored = ctx1.push()) {
             cache.get("a").thenApply(product -> {
-                log.info("1: {}", RequestContext.current().request().path());
+                log.info("RequestContext1.path={}", RequestContext.current().request().path());
                 return product;
             });
         }
 
         try (SafeCloseable ignored = ctx2.push()) {
             final CompletableFuture<Product> f2 = cache.get("a").thenApply(product -> {
-                log.info("2: {}", RequestContext.current().request().path());
+                log.info("RequestContext2.path={}", RequestContext.current().request().path());
                 return product;
             });
 
             assertThat(SingleInterop.fromFuture(f2)
-                                    .doOnSuccess(product -> log.info("product: {}", product))
+                                    .doOnSuccess(product -> log.info("the exception will be thrown here"))
                                     .timeout(10, TimeUnit.SECONDS).blockingGet().getName())
                     .isEqualTo("hello world");
         }
