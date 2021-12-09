@@ -11,10 +11,10 @@ repositories {
 }
 
 dependencies {
-    compileOnly "org.projectlombok:lombok:1.18.8"
-    annotationProcessor "org.projectlombok:lombok:1.18.8"
-    testCompileOnly "org.projectlombok:lombok:1.18.8"
-    testAnnotationProcessor "org.projectlombok:lombok:1.18.8"
+    compileOnly 'org.projectlombok:lombok:1.18.22'
+    annotationProcessor "org.projectlombok:lombok:1.18.22"
+    testCompileOnly "org.projectlombok:lombok:1.18.22"
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.22'
 
     [
             'armeria',
@@ -30,8 +30,9 @@ dependencies {
     implementation group: 'com.squareup.retrofit2', name: 'adapter-rxjava2', version: '2.9.0'
     implementation group: 'com.squareup.retrofit2', name: 'converter-jackson', version: '2.9.0'
     implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.5'
+    implementation group: 'com.github.akarnokd', name: 'rxjava2-jdk8-interop', version: '0.3.7'
 
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
     testImplementation group: 'org.assertj', name: 'assertj-core', version: '3.21.0'
 }

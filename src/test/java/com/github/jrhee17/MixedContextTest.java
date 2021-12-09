@@ -21,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -44,6 +45,7 @@ import com.linecorp.armeria.server.ServiceRequestContext;
 import com.linecorp.armeria.server.logging.LoggingService;
 import com.linecorp.armeria.testing.junit5.server.ServerExtension;
 
+import hu.akarnokd.rxjava2.interop.SingleInterop;
 import io.reactivex.Single;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -104,10 +106,9 @@ class MixedContextTest {
 
         cache = Caffeine.newBuilder()
                         .buildAsync((String k, Executor e) -> {
-                            log.info("running...");
                             final CompletableFuture<Product> future = new CompletableFuture<>();
-                            shopService.getProduct().subscribe(
-                                    future::complete, future::completeExceptionally);
+                            shopService.getProduct()
+                                       .subscribe(future::complete, future::completeExceptionally);
                             return future;
                         });
     }
@@ -118,26 +119,23 @@ class MixedContextTest {
                 HttpRequest.of(HttpMethod.GET, "/1")).build();
         final ServiceRequestContext ctx2 = ServiceRequestContext.builder(
                 HttpRequest.of(HttpMethod.GET, "/2")).build();
-        final CompletableFuture<Product> f1, f2;
         try (SafeCloseable ignored = ctx1.push()) {
-            f1 = cache.get("a").thenApply(product -> {
+            cache.get("a").thenApply(product -> {
                 log.info("1: {}", RequestContext.current().request().path());
-                return product;
-            });
-        }
-        try (SafeCloseable ignored = ctx2.push()) {
-            f2 = cache.get("a").thenApply(product -> {
-                log.info("2: {}", RequestContext.current().request().path());
                 return product;
             });
         }
 
         try (SafeCloseable ignored = ctx2.push()) {
-            assertThat(f2.join().getName()).isEqualTo("hello world");
+            final CompletableFuture<Product> f2 = cache.get("a").thenApply(product -> {
+                log.info("2: {}", RequestContext.current().request().path());
+                return product;
+            });
+
+            assertThat(SingleInterop.fromFuture(f2)
+                                    .doOnSuccess(product -> log.info("product: {}", product))
+                                    .timeout(10, TimeUnit.SECONDS).blockingGet().getName())
+                    .isEqualTo("hello world");
         }
-        try (SafeCloseable ignored = ctx1.push()) {
-            assertThat(f1.join().getName()).isEqualTo("hello world");
-        }
-        log.info("done");
     }
 }
